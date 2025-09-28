@@ -1,28 +1,97 @@
 "use client";
 
 import { useState } from "react";
-import { ConnectWallet } from "@/components/ConnectWallet";
+import { generateBackupKey } from "@/lib/crypto";
+import { WalletKeyInput } from "./components/WalletKeyInput";
+import { BackupMethodSelection } from "./components/BackupMethodSelection";
+import { BackupSetup } from "./components/BackupSetup";
+import { BackupFinalization } from "./components/BackupFinalization";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
-  const [publicKey, setPublicKey] = useState("");
-  const [privateKey, setPrivateKey] = useState("");
   const [backupMethod, setBackupMethod] = useState<
     "secondary" | "self" | "both" | null
   >(null);
+  const [backupKey, setBackupKey] = useState<Uint8Array | null>(null);
+  const [secondaryWalletAddress, setSecondaryWalletAddress] = useState<
+    string | null
+  >(null);
+  const [selfDeviceKey, setSelfDeviceKey] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [publicKey, setPublicKey] = useState("");
 
-  const handleStep1Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (publicKey && privateKey) {
-      setStep(2);
+  const handleKeysValidated = () => {
+    setStep(2);
+  };
+
+  const handleMethodSelected = (method: "secondary" | "self" | "both") => {
+    setBackupMethod(method);
+  };
+
+  const handleMethodNext = () => {
+    if (backupMethod) {
+      // Generate backup key
+      const newBackupKey = generateBackupKey();
+      setBackupKey(newBackupKey);
+      console.log("Backup method selected:", backupMethod);
+      console.log("Generated backup key:", newBackupKey);
+      setStep(3);
     }
   };
 
-  const handleStep2Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (backupMethod) {
-      // TODO: Process wallet registration
-      console.log("Registering wallet with backup method:", backupMethod);
+  const handleSecondaryWalletConnected = (address: string) => {
+    setSecondaryWalletAddress(address);
+    console.log("Secondary wallet connected:", address);
+
+    // If only secondary wallet is selected, proceed to finalization
+    if (backupMethod === "secondary") {
+      setStep(4);
+    }
+  };
+
+  const handleSelfConnected = (deviceKey: string) => {
+    setSelfDeviceKey(deviceKey);
+    console.log("Self.xyz connected:", { deviceKey });
+
+    // If only Self is selected, proceed to finalization
+    if (backupMethod === "self") {
+      setStep(4);
+    }
+  };
+
+  const handleBothMethodsComplete = () => {
+    // Check if both methods are complete
+    if (secondaryWalletAddress && selfDeviceKey) {
+      setStep(4);
+    }
+  };
+
+  const handleBackupComplete = () => {
+    setIsProcessing(true);
+    // TODO: Implement actual storage logic
+    setTimeout(() => {
+      alert(
+        "Wallet backup completed successfully! Your wallet is now protected."
+      );
+      setIsProcessing(false);
+    }, 2000);
+  };
+
+  const handleError = (error: string) => {
+    console.error("Backup error:", error);
+    // You could show a toast notification here
+  };
+
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
+    } else if (step === 3) {
+      // Reset wallet connection state for "both" method when going back
+      if (backupMethod === "both") {
+        setSecondaryWalletAddress(null);
+        setSelfDeviceKey(null);
+      }
+      setStep(2);
     }
   };
 
@@ -35,145 +104,40 @@ export default function RegisterPage() {
           </h1>
 
           {step === 1 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Step 1: Enter Wallet Details
-              </h2>
-              <form onSubmit={handleStep1Submit} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="publicKey"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Public Key
-                  </label>
-                  <input
-                    type="text"
-                    id="publicKey"
-                    value={publicKey}
-                    onChange={(e) => setPublicKey(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter your wallet's public key"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="privateKey"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Private Key
-                  </label>
-                  <input
-                    type="password"
-                    id="privateKey"
-                    value={privateKey}
-                    onChange={(e) => setPrivateKey(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter your wallet's private key"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                >
-                  Continue to Step 2
-                </button>
-              </form>
-            </div>
+            <WalletKeyInput onKeysValidated={handleKeysValidated} />
           )}
 
           {step === 2 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Step 2: Choose Backup Method
-              </h2>
-              <form onSubmit={handleStep2Submit} className="space-y-4">
-                <div className="space-y-3">
-                  <label className="flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <input
-                      type="radio"
-                      name="backupMethod"
-                      value="secondary"
-                      checked={backupMethod === "secondary"}
-                      onChange={(e) =>
-                        setBackupMethod(e.target.value as "secondary")
-                      }
-                      className="mr-3"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        A. Using a Secondary Wallet
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Use another wallet as a backup for recovery
-                      </div>
-                    </div>
-                  </label>
+            <BackupMethodSelection
+              selectedMethod={backupMethod}
+              onMethodSelect={handleMethodSelected}
+              onNext={handleMethodNext}
+              onBack={handleBack}
+            />
+          )}
 
-                  <label className="flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <input
-                      type="radio"
-                      name="backupMethod"
-                      value="self"
-                      checked={backupMethod === "self"}
-                      onChange={(e) =>
-                        setBackupMethod(e.target.value as "self")
-                      }
-                      className="mr-3"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        B. Using Self.xyz
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Use Self.xyz for decentralized identity and recovery
-                      </div>
-                    </div>
-                  </label>
+          {step === 3 && (
+            <BackupSetup
+              backupMethod={backupMethod!}
+              secondaryWalletAddress={secondaryWalletAddress}
+              selfDeviceKey={selfDeviceKey}
+              onSecondaryWalletConnected={handleSecondaryWalletConnected}
+              onSelfConnected={handleSelfConnected}
+              onError={handleError}
+              onBack={handleBack}
+              onBothComplete={handleBothMethodsComplete}
+            />
+          )}
 
-                  <label className="flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <input
-                      type="radio"
-                      name="backupMethod"
-                      value="both"
-                      checked={backupMethod === "both"}
-                      onChange={(e) =>
-                        setBackupMethod(e.target.value as "both")
-                      }
-                      className="mr-3"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        C. Both Methods
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Use both secondary wallet and Self.xyz for maximum
-                        security
-                      </div>
-                    </div>
-                  </label>
-                </div>
-
-                <div className="flex space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!backupMethod}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Register Wallet
-                  </button>
-                </div>
-              </form>
-            </div>
+          {step === 4 && (
+            <BackupFinalization
+              publicKey={publicKey}
+              backupMethod={backupMethod!}
+              secondaryWalletAddress={secondaryWalletAddress}
+              selfDeviceKey={selfDeviceKey}
+              isProcessing={isProcessing}
+              onComplete={handleBackupComplete}
+            />
           )}
 
           <div className="mt-8 text-center">

@@ -1,12 +1,20 @@
 "use client";
 
-import { useAppKit } from "@reown/appkit/react";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useAccount, useDisconnect } from "wagmi";
 
 export function ConnectWallet() {
-  const { open } = useAppKit();
+  const { open } = useWeb3Modal();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+
+  const handleConnect = () => {
+    try {
+      open();
+    } catch (error) {
+      console.error("Error opening wallet connection:", error);
+    }
+  };
 
   if (isConnected) {
     return (
@@ -29,7 +37,7 @@ export function ConnectWallet() {
 
   return (
     <button
-      onClick={() => open()}
+      onClick={handleConnect}
       className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors text-lg"
     >
       Connect Wallet
