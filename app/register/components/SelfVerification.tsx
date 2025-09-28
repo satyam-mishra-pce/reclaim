@@ -4,6 +4,9 @@
 import { SelfAppBuilder, SelfQRcodeWrapper } from "@selfxyz/qrcode";
 import { useState } from "react";
 
+const developmentUrl = process.env.NEXT_PUBLIC_DEVELOPMENT_URL;
+const productionUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+
 const SelfQRCode = ({
   address,
   onSuccess,
@@ -18,13 +21,18 @@ const SelfQRCode = ({
   const selfApp = new SelfAppBuilder({
     appName: "Reclaim",
     scope: "reclaim",
-    endpoint: "https://reclaim-self-xyz-creds.vercel.app/api/verify/reclaim",
+    endpoint: developmentUrl
+      ? `${developmentUrl}/api/self/`
+      : productionUrl
+      ? `https://${productionUrl}/api/self/`
+      : "",
     endpointType: "https",
     userId: address,
     userIdType: "hex",
     disclosures: {},
     version: 2,
     userDefinedData,
+    devMode: developmentUrl ? true : false,
   }).build();
 
   return (

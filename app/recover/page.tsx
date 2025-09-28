@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { RecoveryMethodSelection } from "./components/RecoveryMethodSelection";
+import Link from "next/link";
 
 export default function RecoverPage() {
   const [recoveryMethod, setRecoveryMethod] = useState<
@@ -35,12 +36,12 @@ export default function RecoverPage() {
           />
 
           <div className="mt-8 text-center">
-            <a
+            <Link
               href="/"
               className="text-blue-600 dark:text-blue-400 hover:underline"
             >
               ← Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </div>

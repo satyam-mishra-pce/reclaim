@@ -6,6 +6,7 @@ import { WalletKeyInput } from "./components/WalletKeyInput";
 import { BackupMethodSelection } from "./components/BackupMethodSelection";
 import { BackupSetup } from "./components/BackupSetup";
 import { BackupFinalization } from "./components/BackupFinalization";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -141,12 +142,12 @@ export default function RegisterPage() {
           )}
 
           <div className="mt-8 text-center">
-            <a
+            <Link
               href="/"
               className="text-blue-600 dark:text-blue-400 hover:underline"
             >
               ← Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </div>

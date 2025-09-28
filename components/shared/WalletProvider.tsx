@@ -18,7 +18,6 @@ if (!projectId) throw new Error("Project ID is not defined");
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
-  // @ts-ignore
   defaultChain: SUPPORTED_CHAINS[0],
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
